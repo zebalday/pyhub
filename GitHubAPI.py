@@ -1,5 +1,5 @@
 import requests
-from GitHubClasses import GitHubUser, GitHubCommit
+from .GitHubClasses import GitHubUser, GitHubCommit
 
 
 USER_ENDPOINT: str = "https://api.github.com/users/{}"
@@ -31,6 +31,7 @@ class GitHubApi():
             r = r.json()
             user = GitHubUser(
                             username=r["login"],
+                            user_url=r["html_url"],
                             full_name=r["name"],
                             location=r["location"],
                             bio = r["bio"],
