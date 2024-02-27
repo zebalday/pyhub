@@ -4,3 +4,4 @@ github_requests.py
 GitHubCommit.py
 venv
 __pycache__
+github_credentials.txt
