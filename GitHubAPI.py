@@ -13,10 +13,10 @@ class GitHubApi():
     use_headers: bool = False
 
     """ CONSTRUCTOR """
-    def __init__(self, use_headers: bool, auth_token: str = "", request_id: str = "") -> None:
-        self.use_headers = use_headers
-        self.headers["Authorization"] = auth_token
-        self.headers["request_id"] = request_id
+    def __init__(self,auth_token: str = None) -> None:
+        if auth_token:
+            self.use_headers = True
+            self.headers["Authorization"] = f"Bearer {auth_token}"
 
     """ METHODS """
     @classmethod
@@ -101,5 +101,9 @@ class GitHubApi():
         r = r.json()
         return (r["html_url"])
 
-
+    def __str__(self) -> str:
+        return (f"""
+        Use headers: {self.use_headers}
+        Headers: {self.headers}
+        """)
 
