@@ -13,10 +13,12 @@ class GitHubApi():
     use_headers: bool = False
 
     """ CONSTRUCTOR """
-    def __init__(self, use_headers: bool, auth_token: str = "", request_id: str = "") -> None:
+    def __init__(self, use_headers: bool, auth_token: str = None, request_id: str = None) -> None:
         self.use_headers = use_headers
-        self.headers["Authorization"] = auth_token
-        self.headers["request_id"] = request_id
+        if auth_token:
+            self.headers["Authorization"] = auth_token
+        if request_id:
+            self.headers["request_id"] = request_id
 
     """ METHODS """
     @classmethod
