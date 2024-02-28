@@ -113,6 +113,7 @@ class GitHubUser():
     """ ATTRIBUTES """
     
     username: str
+    user_url : str
     full_name: str
     location: str
     bio: str
@@ -121,8 +122,9 @@ class GitHubUser():
 
     """ CONSTRUCTOR """
 
-    def __init__(self, username, full_name, location, bio, avatar_url, repos_url) -> None:
+    def __init__(self, username, user_url, full_name, location, bio, avatar_url, repos_url) -> None:
         self.username = username
+        self.user_url = user_url
         self.full_name = full_name
         self.location = location
         self.bio = bio
@@ -135,6 +137,10 @@ class GitHubUser():
     def username(self) -> str:
         return self._username
 
+    @property
+    def user_url(self) -> str:
+        return self._user_url
+    
     @property
     def name(self) -> str:
         return self._full_name
@@ -161,6 +167,10 @@ class GitHubUser():
     @username.setter
     def username(self, value: str):
         self._username = value
+
+    @user_url.setter
+    def user_url(self, value: str):
+        self._user_url = value
 
     @name.setter
     def name(self, value: str):
@@ -196,6 +206,7 @@ class GitHubUser():
     def __str__(self) -> str:
         return (f"""
             Username: {self.username}
+            User URL: {self.user_url}
             Name: {self.full_name}
             Location: {self.location}
             Bio: {self.bio}
