@@ -4,22 +4,50 @@ from .GitHubClasses import GitHubUser, GitHubCommit
 
 USER_ENDPOINT: str = "https://api.github.com/users/{}"
 COMMITS_ENDPOINT: str = "https://api.github.com/users/{}/events/public"
-
+ZEN_ENDPOINT: str = "https://api.github.com/zen"
 
 class GitHubApi():
     
-    """ ATTRIUTES """
-    headers: dict = {}
+    """ ATTRIBUTES """
+    token: str
     use_headers: bool = False
+    headers: dict = {}
 
     """ CONSTRUCTOR """
-    def __init__(self,auth_token: str = None) -> None:
-        if auth_token:
+    def __init__(self, token: str = "") -> None:
+        if token:
+            self.token = token
             self.use_headers = True
-            self.headers["Authorization"] = f"Bearer {auth_token}"
+            self.headers = {"Authorization" : f"Bearer {token}"}
+
+    """ GETTERS """
+    @property
+    def token(self) -> str:
+        return self._token
+
+    @property
+    def use_headers(self) -> bool:
+        return self._use_headers
+
+    @property
+    def headers(self) -> dict:
+        return self._headers
+
+    """ SETTERS """
+    @token.setter
+    def token(self, value: str):
+        self._token = value
+
+    @use_headers.setter
+    def use_headers(self, value: bool):
+        self._use_headers = value
+
+    @headers.setter
+    def headers(self, value: dict):
+        self._headers = value
 
     """ METHODS """
-    @classmethod
+
     def getUser(self, username) -> GitHubUser:
         
         if self.use_headers:
@@ -42,7 +70,7 @@ class GitHubApi():
         
         raise Exception("User couldn't be found.")
 
-    @classmethod
+    
     def getLastCommits(self, username, number) -> list:
         
         if self.use_headers:
@@ -80,7 +108,7 @@ class GitHubApi():
         
         raise Exception ("User couldn't be found.")
 
-    @classmethod
+
     def getCommitAdditionalInfo(self, commit_url):
         
         if self.use_headers:
@@ -91,7 +119,7 @@ class GitHubApi():
         r = r.json()
         return (r["commit"]["author"]["email"], r["html_url"])
     
-    @classmethod
+
     def getRepoHtmlUrl(self, repo_url):
         
         if self.use_headers:
@@ -102,6 +130,22 @@ class GitHubApi():
         r = r.json()
         return (r["html_url"])
 
+    
+    def get_zen_info(self):
+        if self.use_headers:
+            r = requests.get(ZEN_ENDPOINT, headers=self.headers)
+        else:
+            r = requests.get(ZEN_ENDPOINT)
+
+        return (f"""
+            Server: {r.headers["Server"]}
+            Date: {r.headers["Date"]}
+            RateLimit-Limit: {r.headers["X-RateLimit-Limit"]}
+            RateLimit-Used: {r.headers["X-RateLimit-Used"]}
+            RateLimit-Remaining: {r.headers["X-RateLimit-Remaining"]}
+        """)
+
+    
     def __str__(self) -> str:
         return (f"""
         Use headers: {self.use_headers}
