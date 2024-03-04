@@ -1,9 +1,14 @@
-import requests
+from requests import get
+from rest_framework import status
+from rest_framework.response import Response
+from .serializers import GithubUserSerializer, GithubCommitSerializer
 from .GitHubClasses import GitHubUser, GitHubCommit
 
 
 USER_ENDPOINT: str = "https://api.github.com/users/{}"
 COMMITS_ENDPOINT: str = "https://api.github.com/users/{}/events/public"
+FOLLOWING_ENDPOINT: str = "https://api.github.com/users/{}/following"
+FOLLOWERS_ENDPOINT: str = "https://api.github.com/users/{}/followers"
 ZEN_ENDPOINT: str = "https://api.github.com/zen"
 
 class GitHubApi():
@@ -51,9 +56,9 @@ class GitHubApi():
     def getUser(self, username) -> GitHubUser:
         
         if self.use_headers:
-            r = requests.get(USER_ENDPOINT.format(username), headers= self.headers)
+            r = get(USER_ENDPOINT.format(username), headers= self.headers)
         else:
-            r = requests.get(USER_ENDPOINT.format(username))
+            r = get(USER_ENDPOINT.format(username))
         
         if r.status_code == 200:
             r = r.json()
@@ -66,17 +71,20 @@ class GitHubApi():
                             avatar_url=r["avatar_url"],
                             repos_url=r["repos_url"]
             )
-            return user
+
+            user_serialized = GithubUserSerializer(user)
+
+            return Response(user_serialized.data, status=status.HTTP_200_OK)
         
-        raise Exception("User couldn't be found.")
+        return Response(r.status_code, status=status.HTTP_404_NOT_FOUND)
 
     
     def getLastCommits(self, username, number) -> list:
         
         if self.use_headers:
-            r = requests.get(COMMITS_ENDPOINT.format(username), headers= self.headers)
+            r = get(COMMITS_ENDPOINT.format(username), headers= self.headers)
         else:
-            r = requests.get(COMMITS_ENDPOINT.format(username))
+            r = get(COMMITS_ENDPOINT.format(username))
         
 
         if r.status_code == 200:
@@ -103,18 +111,66 @@ class GitHubApi():
                 )
                 
                 last_commits_info.append(commit)
+
+            commits_serialized = GithubCommitSerializer(last_commits_info, many=True)
+
+            return Response(commits_serialized.data, status=status.HTTP_200_OK)
         
-            return last_commits_info
+        return Response(r.status_code, status=status.HTTP_404_NOT_FOUND)
+
+
+    def getUserFollowers(self, username) -> list:
+        params={'page':1}
+        response = get(FOLLOWERS_ENDPOINT.format(username), params=params)
+
+        if response.status_code == 200:
+            followers = self.getUsersList(response.json())
+
+            while len(response.json()) > 0:
+                params['page']+=1
+                response = get(FOLLOWERS_ENDPOINT.format(username), params=params)
+                followers += self.getUsersList(response.json())
+            
+            return Response(followers, status=status.HTTP_200_OK)
+
+        return Response(response.status_code, status=status.HTTP_404_NOT_FOUND)
+
+
+    def getUserFollowing(self, username) -> list:
+        params={'page':1}
+        response = get(FOLLOWING_ENDPOINT.format(username), params=params)
+
+        if response.status_code == 200:
+            following = self.getUsersList(response.json())
+
+            while len(response.json()) > 0:
+                params['page']+=1
+                response = get(FOLLOWING_ENDPOINT.format(username), params=params)
+                following += self.getUsersList(response.json())
+            
+            return Response(following, status=status.HTTP_200_OK)
         
-        raise Exception ("User couldn't be found.")
+        return Response(res.status_code, status=status.HTTP_404_NOT_FOUND)
+
+
+    def getUsersList(self, users_list)-> list:
+        users = []
+        print(users_list)
+        for user in users_list:
+            user_info={
+                'username':user['login'],
+                'user_url':user['html_url'],
+            }
+            users.append(user_info)
+        return users
 
 
     def getCommitAdditionalInfo(self, commit_url):
         
         if self.use_headers:
-            r = requests.get(commit_url, headers= self.headers)
+            r = get(commit_url, headers= self.headers)
         else:
-            r = requests.get(commit_url)
+            r = get(commit_url)
 
         r = r.json()
         return (r["commit"]["author"]["email"], r["html_url"])
@@ -123,9 +179,9 @@ class GitHubApi():
     def getRepoHtmlUrl(self, repo_url):
         
         if self.use_headers:
-            r = requests.get(repo_url, headers= self.headers)
+            r = get(repo_url, headers= self.headers)
         else:
-            r = requests.get(repo_url)
+            r = get(repo_url)
 
         r = r.json()
         return (r["html_url"])
@@ -133,9 +189,9 @@ class GitHubApi():
     
     def get_zen_info(self):
         if self.use_headers:
-            r = requests.get(ZEN_ENDPOINT, headers=self.headers)
+            r = get(ZEN_ENDPOINT, headers=self.headers)
         else:
-            r = requests.get(ZEN_ENDPOINT)
+            r = get(ZEN_ENDPOINT)
 
         return (f"""
             Server: {r.headers["Server"]}
