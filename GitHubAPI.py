@@ -1,6 +1,5 @@
 from requests import get
 from rest_framework import status
-from rest_framework.response import Response
 from .serializers import GithubUserSerializer, GithubCommitSerializer
 from .GitHubClasses import GitHubUser, GitHubCommit
 
@@ -19,11 +18,10 @@ class GitHubApi():
     headers: dict = {}
 
     """ CONSTRUCTOR """
-    def __init__(self, token: str = "") -> None:
-        if token:
-            self.token = token
-            self.use_headers = True
-            self.headers = {"Authorization" : f"Bearer {token}"}
+    def __init__(self, token: str) -> None:
+        self.token = token
+        self.use_headers = True
+        self.headers = {"Authorization" : f"Bearer {token}"}
 
     """ GETTERS """
     @property
@@ -53,49 +51,42 @@ class GitHubApi():
 
     """ METHODS """
 
-    def getUser(self, username) -> GitHubUser:
-        
-        if self.use_headers:
-            r = get(USER_ENDPOINT.format(username), headers= self.headers)
-        else:
-            r = get(USER_ENDPOINT.format(username))
-        
-        if r.status_code == 200:
-            r = r.json()
+    def getUser(self, username) -> dict:
+        response = get(url=USER_ENDPOINT.format(username), headers= self.headers)
+
+        if response.status_code == 200:
+            response = response.json()
             user = GitHubUser(
-                            username=r["login"],
-                            user_url=r["html_url"],
-                            full_name=r["name"],
-                            location=r["location"],
-                            bio = r["bio"],
-                            avatar_url=r["avatar_url"],
-                            repos_url=r["repos_url"]
+                            username=response["login"],
+                            user_url=response["html_url"],
+                            full_name=response["name"],
+                            location=response["location"],
+                            bio = response["bio"],
+                            avatar_url=response["avatar_url"],
+                            repos_url=response["repos_url"]
             )
 
             user_serialized = GithubUserSerializer(user)
 
-            return Response(user_serialized.data, status=status.HTTP_200_OK)
+            return ({'user':user_serialized.data, 'status':status.HTTP_200_OK})
         
-        return Response(r.status_code, status=status.HTTP_404_NOT_FOUND)
+        return ({'status':status.HTTP_404_NOT_FOUND})
 
-    
+
     def getLastCommits(self, username, number) -> list:
         
-        if self.use_headers:
-            r = get(COMMITS_ENDPOINT.format(username), headers= self.headers)
-        else:
-            r = get(COMMITS_ENDPOINT.format(username))
-        
+        response = get(url=COMMITS_ENDPOINT.format(username), headers= self.headers)
+                
+        if response.status_code == 200:
 
-        if r.status_code == 200:
             # Filter PushEvents and number of commits
-            push_list = [x for x in r.json() if x["type"]== "PushEvent"]
+            push_list = [x for x in response.json() if x["type"]== "PushEvent"]
             push_list = push_list[:number]
             
             last_commits_info = []
             
+            # Fetch commit items
             for push in push_list:
-                
                 commit_url = push["payload"]["commits"][-1]["url"]
                 email, commit_html = self.getCommitAdditionalInfo(commit_url)
                 repo_url = self.getRepoHtmlUrl(push["repo"]["url"])
@@ -114,9 +105,9 @@ class GitHubApi():
 
             commits_serialized = GithubCommitSerializer(last_commits_info, many=True)
 
-            return Response(commits_serialized.data, status=status.HTTP_200_OK)
+            return ({'commits':commits_serialized.data, 'status':status.HTTP_200_OK})
         
-        return Response(r.status_code, status=status.HTTP_404_NOT_FOUND)
+        return ({'status':status.HTTP_404_NOT_FOUND})
 
 
     def getUserFollowers(self, username) -> list:
@@ -131,9 +122,9 @@ class GitHubApi():
                 response = get(FOLLOWERS_ENDPOINT.format(username), params=params)
                 followers += self.getUsersList(response.json())
             
-            return Response(followers, status=status.HTTP_200_OK)
+            return ({'followers':followers, 'status':status.HTTP_200_OK})
 
-        return Response(response.status_code, status=status.HTTP_404_NOT_FOUND)
+        return ({'status':status.HTTP_404_NOT_FOUND})
 
 
     def getUserFollowing(self, username) -> list:
@@ -148,14 +139,13 @@ class GitHubApi():
                 response = get(FOLLOWING_ENDPOINT.format(username), params=params)
                 following += self.getUsersList(response.json())
             
-            return Response(following, status=status.HTTP_200_OK)
+            return ({'following':following, 'status':status.HTTP_200_OK})
         
-        return Response(res.status_code, status=status.HTTP_404_NOT_FOUND)
+        return ({'status':status.HTTP_404_NOT_FOUND})
 
 
     def getUsersList(self, users_list)-> list:
         users = []
-        print(users_list)
         for user in users_list:
             user_info={
                 'username':user['login'],
@@ -174,7 +164,7 @@ class GitHubApi():
 
         r = r.json()
         return (r["commit"]["author"]["email"], r["html_url"])
-    
+
 
     def getRepoHtmlUrl(self, repo_url):
         
@@ -186,7 +176,7 @@ class GitHubApi():
         r = r.json()
         return (r["html_url"])
 
-    
+
     def get_zen_info(self):
         if self.use_headers:
             r = get(ZEN_ENDPOINT, headers=self.headers)
@@ -201,7 +191,7 @@ class GitHubApi():
             RateLimit-Remaining: {r.headers["X-RateLimit-Remaining"]}
         """)
 
-    
+
     def __str__(self) -> str:
         return (f"""
         Use headers: {self.use_headers}

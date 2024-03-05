@@ -13,6 +13,7 @@ class GithubUserSerializer(serializers.Serializer):
 class GithubCommitSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=250)
     email = serializers.CharField(max_length=250)
+    repo_name = serializers.CharField(max_length=250)
     repo_url = serializers.CharField(max_length=250)
     commit_url = serializers.CharField(max_length=250)
     commit_message = serializers.CharField(max_length=250)
