@@ -112,14 +112,14 @@ class GitHubApi():
 
     def getUserFollowers(self, username) -> list:
         params={'page':1}
-        response = get(FOLLOWERS_ENDPOINT.format(username), params=params)
+        response = get(FOLLOWERS_ENDPOINT.format(username), headers=self.headers, params=params)
 
         if response.status_code == 200:
             followers = self.getUsersList(response.json())
 
             while len(response.json()) > 0:
                 params['page']+=1
-                response = get(FOLLOWERS_ENDPOINT.format(username), params=params)
+                response = get(FOLLOWERS_ENDPOINT.format(username), headers=self.headers, params=params)
                 followers += self.getUsersList(response.json())
             
             return ({'followers':followers, 'status':status.HTTP_200_OK})
@@ -129,18 +129,18 @@ class GitHubApi():
 
     def getUserFollowing(self, username) -> list:
         params={'page':1}
-        response = get(FOLLOWING_ENDPOINT.format(username), params=params)
+        response = get(FOLLOWING_ENDPOINT.format(username), headers=self.headers, params=params)
 
         if response.status_code == 200:
             following = self.getUsersList(response.json())
 
             while len(response.json()) > 0:
                 params['page']+=1
-                response = get(FOLLOWING_ENDPOINT.format(username), params=params)
+                response = get(FOLLOWING_ENDPOINT.format(username), headers=self.headers, params=params)
                 following += self.getUsersList(response.json())
             
             return ({'following':following, 'status':status.HTTP_200_OK})
-        
+    
         return ({'status':status.HTTP_404_NOT_FOUND})
 
 
