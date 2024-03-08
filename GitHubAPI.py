@@ -150,6 +150,7 @@ class GitHubApi():
             user_info={
                 'username':user['login'],
                 'user_url':user['html_url'],
+                'avatar_url':user['avatar_url'],
             }
             users.append(user_info)
         return users
